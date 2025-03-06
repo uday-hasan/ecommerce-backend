@@ -1,27 +1,21 @@
 import { Request, Response, NextFunction } from "express";
-import User from "../db/models/user.model";
+import User, { IUser } from "../db/models/user.model";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config/env";
 
+interface IReq extends Request {
+  user: IUser | null;
+}
+
 const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userName, email, mobile, password } = req.body;
-    if (!userName || !email || !mobile || !password) {
-      res.status(400).json({
+    const { userName, email, mobile, password, role } = req.body;
+    if (role === "admin") {
+      res.status(406).json({
+        message: "You are not allowed to register as admin",
         success: false,
-        message: "Username, email, mobile and password all fields are required",
-      });
-      return;
-    }
-    const isExistUser = await User.findOne({
-      $or: [{ email }, { mobile }, { userName }],
-    });
-    if (isExistUser) {
-      res.status(409).json({
-        success: false,
-        message: "User exist by email or mobile or username",
       });
       return;
     }
@@ -32,7 +26,7 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
       email,
       password: hash,
       mobile,
-      role: "user",
+      role,
       isVerified: false,
       orderHistory: [],
       cart: [],
@@ -41,7 +35,9 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
     }).save();
 
     if (newUser) {
-      const token = jwt.sign({ userId: newUser._id }, JWT_SECRET!);
+      const token = jwt.sign({ userId: newUser._id }, JWT_SECRET!, {
+        expiresIn: "1D",
+      });
       res.cookie("AUTH_COOKIE", token);
       res.status(201).json({
         success: true,
@@ -91,4 +87,16 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { register, login };
+const signOut = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    (req as IReq).user = null;
+    res.clearCookie("AUTH_COOKIE");
+    res
+      .status(200)
+      .json({ success: true, message: "User signed out successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { register, login, signOut };

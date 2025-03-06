@@ -6,6 +6,7 @@ import connectDB from "./db/connectDB";
 import errorHandler from "./middleware/error.middleware";
 import authRouter from "./routes/auth.route";
 import userRouter from "./routes/user.route";
+import productRouter from "./routes/product.route";
 
 const app = express();
 app.use(cors());
@@ -21,6 +22,7 @@ app.get("/api/v1/auth", async (req: Request, res: Response) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/products", productRouter);
 
 app.use(errorHandler);
 

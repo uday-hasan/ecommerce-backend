@@ -1,4 +1,3 @@
-import { Types } from "mongoose";
 import User from "../db/models/user.model";
 import { NextFunction, Request, Response } from "express";
 
@@ -36,4 +35,24 @@ const getUsers = async (req: Request, res: Response, next: NextFunction) => {
   } catch (error) {}
 };
 
-export { getUserById, getUsers };
+const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id;
+    const deleted = await User.findByIdAndDelete(id);
+    if (deleted) {
+      res.status(200).json({
+        success: true,
+        message: "User deleted successfully",
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { getUserById, getUsers, deleteUser };
